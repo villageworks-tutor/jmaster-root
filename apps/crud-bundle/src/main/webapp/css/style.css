@@ -1,0 +1,35 @@
+@charset "UTF-8";
+
+html {
+	font-size: 62.5%;
+}
+
+body {
+	color: dimgray;
+	background-color: floralwhite;
+	font-size: 1.4rem;
+	margin: 0 2.5rem 0;
+	width: 640px; /* 暫定値 */
+}
+
+header {
+	border-bottom: 3.5px dimgray double;
+}
+
+footer {
+	margin: 2.4rem 0 0 0;
+	padding: 1.6rem 0 0 0;
+	border-top: 1px dimgray solid;
+	font-size: 1.4rem;
+	font-family: 'Times New Roman', Times, serif;
+	font-style: italic;
+}
+
+table th, table td {
+	padding: 0.25rem 0.75rem;
+	text-align: center;
+}
+
+table td:nth-child(3) {
+	text-align: left;
+}

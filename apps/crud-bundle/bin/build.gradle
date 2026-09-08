@@ -1,0 +1,66 @@
+plugins {
+
+    id 'war'
+    id 'eclipse-wtp'
+
+}
+
+java.sourceCompatibility = 21
+
+def mockitoVersion = '5.23.0'
+
+eclipse.wtp.facet.facet name: 'jst.web', version: '6.0'
+
+repositories.mavenCentral()
+
+configurations {
+
+    mockitoAgent
+
+}
+
+dependencies {
+
+    // servlet-apiとjakarta-jstl
+
+    compileOnly 'org.apache.tomcat:tomcat-servlet-api:10.1.+'
+
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.1'
+
+    runtimeOnly 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
+
+    // JUnit include with mockito
+
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
+
+    testing.suites.test.useJUnitJupiter('5.+')
+
+    configurations {
+        testImplementation.extendsFrom compileOnly
+    }
+
+    // PostgreSQL
+
+    implementation 'org.postgresql:postgresql:42.7.11'
+
+    // original library
+
+    implementation files('libs/DateConverter-1.0.0.jar')
+
+    // Mockito Java Agent
+
+    mockitoAgent("org.mockito:mockito-core:$mockitoVersion") {
+        transitive = false
+    }
+
+}
+
+tasks {
+
+    test {
+
+        jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+
+    }
+
+}
