@@ -45,6 +45,17 @@ public class AppServlet extends HttpServlet {
 				request.setAttribute("employees", list);
 				// 3-1.3 遷移先画面URLの設定
 				nextURL = JSP_DIR + "/employees.jsp";
+			} else if (action.equals("search")) {
+				// 3-2. actionキーが「search」の場合：氏名あいまい検索
+				// 3-2.1 リクエストパラメータを取得
+				String name = request.getParameter("name");
+				// 3-2.2 氏名あいまい検索を実行
+				List<EmployeeBean> list = dao.findByNameLike(name);
+				// 3-2.3 従業員リストと検索条件をスコープに登録
+				request.setAttribute("employees", list);
+				request.setAttribute("name", name);
+				// 3-2.4 遷移先画面URLの設定
+				nextURL = JSP_DIR + "/employees.jsp";
 			}
 			// 4. 画面遷移
 			this.gotoPage(request, response, nextURL);

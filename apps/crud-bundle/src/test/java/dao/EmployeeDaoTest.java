@@ -4,12 +4,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.villageworks.app.DateConverter;
 
 import bean.EmployeeBean;
@@ -44,15 +48,86 @@ class EmployeeDaoTest extends DbUnitTestHelper {
 		// テスト対象クラスのインスタンス化
 		sut = new EmployeeDAO();
 		// テストの準備
-		DbUnitTestHelper.OPERATION_INIT("employees");
+		OPERATION_INIT("employees");
 	}
 
 	@AfterEach
 	void tearDown() throws Exception {
 		// テストの後始末
-		DbUnitTestHelper.OPERATION_INIT("employees");
+		OPERATION_RESTORE("employees");
 	}
 	
+	@Nested
+	@DisplayName("EmployeeDAO#findByNameLikeメソッドのテストクラス")
+	class FindByNameLikeTest {
+		@BeforeEach
+		void setUp() throws Exception {
+			restore();
+		}
+		
+		@ParameterizedTest
+		@MethodSource("findByNameLikeProvider")
+		void 従業員氏名のあいまい検索ができる(String target, List<EmployeeBean> expected) throws Exception {
+			// setup & execute
+			List<EmployeeBean> actual = sut.findByNameLike(target);
+			// verify
+			assertEmployees(expected, actual);
+		}
+		
+		/**
+		 * 従業員氏名のあいまい検索ができるテスト用のテストパラメータを提供する
+		 * @return テストパラメータ
+		 *         テストパラメータは以下の項目を返す
+		 *         	・検索キーワード
+		 *         	・検索結果の期待値（Liist<EmployeeBean>）
+		 */
+		static Stream<Arguments> findByNameLikeProvider() {
+			return
+				Stream.of(
+					// キーワードが空文字列「」の場合のテスト：キーワードが空文字「」で全件取得できる
+					Arguments.of(
+						""
+						, sampleEmployees
+					),
+						
+					// キーワードが従業員氏名に含まれない場合のテスト：キーワード「￥」で空リストを取得する
+					Arguments.of(
+						"￥"
+						, List.of()
+					),
+					
+					// 後方一致検索のテスト：キーワード「子」で４件取得できる
+					Arguments.of(
+						"子"
+						, List.of(
+							  new EmployeeBean(2, 1, "釜本 喜美子", "01600", "1991-2-20")
+							, new EmployeeBean(5, 3, "萩原 恵理子", "01251", "2008-9-28")
+							, new EmployeeBean(6, 3, "岡田 奈緒子", "02850", "2007-5-1")
+							, new EmployeeBean(8, 4, "西口 麻衣子", "03000", "2008-12-3")
+						)
+					),
+					
+					// 中間一致検索のテスト：キーワード「本」で２件取得できる
+					Arguments.of(
+						"本"
+						, List.of(
+							  new EmployeeBean(2, 1, "釜本 喜美子", "01600", "1991-2-20")
+							, new EmployeeBean(9, 4, "滝本 順三", "05000", "2004-12-18")
+						)
+					),
+					
+					// 前方一致検索のテスト：キーワード「岡田」で２件取得できる
+					Arguments.of(
+						  "岡田"
+						, List.of(
+							  new EmployeeBean(6, 3, "岡田 奈緒子", "02850", "2007-5-1")
+							, new EmployeeBean(11, 5, "岡田 光太郎", "1501", "2019-06-11")
+						)
+					)
+				);
+		}
+	}
+
 	@Nested
 	@DisplayName("EmployeeDAO#findAllメソッドのテストクラス")
 	class FindAllTest {
@@ -83,6 +158,24 @@ class EmployeeDaoTest extends DbUnitTestHelper {
 			List<EmployeeBean> actual = sut.findAll();
 			// verify
 			assertEquals(expected, actual.size());
+		}
+	}
+	
+	/**
+	 * テスト前サンプルレコードを復元する
+	 * @throws Exception
+	 */
+	
+	@Override
+	protected void restore() throws Exception {
+		for (EmployeeBean employee : sampleEmployees) {
+			try (PreparedStatement pstmt = testConnection.prepareStatement(SQL_INSERT_INTO_EMPLOYEES);) {
+				pstmt.setInt(1, employee.getDepartmentId());
+				pstmt.setString(2, employee.getName());
+				pstmt.setString(3, employee.getPhone());
+				pstmt.setDate(4, DateConverter.toSqlDate(employee.getHiredAt()));
+				pstmt.executeUpdate();
+			}
 		}
 	}
 	

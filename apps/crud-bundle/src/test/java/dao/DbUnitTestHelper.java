@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 /**
  * CRUD操作単体テスト用ヘルパークラス
  */
-public class DbUnitTestHelper {
+public abstract class DbUnitTestHelper {
 
 	/**
 	 * クラス変数：データベース接続オブジェクト
@@ -38,12 +38,33 @@ public class DbUnitTestHelper {
 		// テスト用データベース接続オブジェクトの解放
 		testConnection.close();
 	}
-	
+
+	/**
+	 * テーブルを初期化する：自動付番のフィールドも初期化される
+	 * @param  tableName 対象となるテーブル名
+	 * @throws Exception テーブルの初期化に失敗した場合
+	 */
 	public static void OPERATION_INIT(String tableName) throws Exception {
 		String sql = SQL_TRUNCATE.replace("@table_name", tableName);
 		try (PreparedStatement pstmt = testConnection.prepareStatement(sql);) {
 			pstmt.executeUpdate();
 		}
+	}
+	
+	/**
+	 * テストデータを復元する：復元するテストデータは継承クラスで定義する。
+	 * @throws Exception テストデータの復元に失敗した場合
+	 */
+	protected abstract void restore() throws Exception;
+	
+	/**
+	 * テーブルのレコードをす復元する：復元するレコードは継承クラスで定義する
+	 * @param  tableName 対象となるテーブル名
+	 * @throws Exception テストデータの復元に失敗した場合
+	 */
+	public final void OPERATION_RESTORE(String tableName) throws Exception {
+		OPERATION_INIT(tableName);
+		restore();
 	}
 
 }
