@@ -30,6 +30,56 @@ public class EmployeeDAO extends BaseDAO {
 	}
 
 	/**
+	 * 入社日範囲検索
+	 * @param hiredAtFrom 入社日検索範囲開始日
+	 * @param hiredAtTo   入社日検索範囲終了日
+	 * @return List<EmployeeBean> 従業員リスト
+	 * @throws DAOException レコードの取得に失敗した場合
+	 */
+	public List<EmployeeBean> findByHiredAtBetween(String hiredAtFrom, String hiredAtTo) throws DAOException {
+		// 0. 実行するSQLの設定
+		String sql = "SELECT * FROM employees";
+		if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+			sql += " WHERE hired_at BETWEEN ? AND ? ";
+		} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
+			sql += " WHERE hired_at >= ? ";
+		} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+			sql += " WHERE hired_at <= ? ";
+		} else {
+			sql += " ";
+		}
+		sql += "ORDER BY id;";
+		
+		try (// 1. データベース接続オブジェクトを取得
+ 			 Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+			 // 2. SQL実行オブジェクトを取得
+			 PreparedStatement pstmt = con.prepareStatement(sql);) {
+			// 3. パラメータバインディング
+			if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+				pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtFrom)));
+				pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtTo)));
+			} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
+				pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtFrom)));
+			} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+				pstmt.setDate(1,DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtTo)));
+			}
+			
+			try (// 4. SQLの実行と結果セットの取得
+				 ResultSet rs = pstmt.executeQuery();) {
+				// 5. 結果セットを従業員リストに返還
+				List<EmployeeBean> list = convertToList(rs);
+				// 6. 従業員リストを返還
+				return list;
+			}
+		} catch (SQLException e) {
+			// スタックトレースに表示
+			e.printStackTrace();
+			// DAO例外をスロー
+			throw new DAOException("レコードの取得に失敗しました。", e);
+		}
+	}
+
+	/**
 	 * 従業員指名あいまい検索
 	 * @param  name 従業員氏名に含まれるキーワード
 	 * @return List<EmployeeBean> 従業員リスト
@@ -81,6 +131,10 @@ public class EmployeeDAO extends BaseDAO {
 			// DAO例外をスロー
 			throw new DAOException("レコードの取得に失敗しました。", e);
 		}
+	}
+	
+	private boolean hasValue(String target) {
+		return (target != null && !target.isEmpty());
 	}
 	
 	/**

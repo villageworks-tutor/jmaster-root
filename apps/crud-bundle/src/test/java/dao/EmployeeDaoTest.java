@@ -58,6 +58,63 @@ class EmployeeDaoTest extends DbUnitTestHelper {
 	}
 	
 	@Nested
+	@DisplayName("EmployeeDDAO#finsByHiredAtBetweenメソッドのテスト")
+	class FindByHiredAtBetweenTest {
+		@BeforeEach
+		void setUp() throws Exception {
+			restore();
+		}
+		
+		@ParameterizedTest
+		@MethodSource("findByHiredAtBetweenProvider")
+		void 入社日の範囲検索ができる(String hiredAtFrom, String hiredAtTo, List<EmployeeBean> expeected) throws Exception {
+			// setup & execute
+			List<EmployeeBean> actual = sut.findByHiredAtBetween(hiredAtFrom, hiredAtTo);
+			// verify
+			assertEmployees(expeected, actual);
+		}
+		
+		static Stream<Arguments> findByHiredAtBetweenProvider() {
+			return
+				Stream.of(
+					// 入社範囲を指定しない場合は全件検索
+					Arguments.of(
+						"",
+						null,
+						sampleEmployees
+					),
+					// 「1991-4-1」以前に入社した従業員は従業員番号が「2」と「3」の従業員である
+					Arguments.of(
+						"",
+						"1991-4-1",
+						List.of(
+							  new EmployeeBean(2, 1, "釜本 喜美子", "01600", "1991-2-20")
+							, new EmployeeBean(3, 2, "安部 弘江", "01250", "1991-2-22")
+						)
+					),
+					// 「2019-4-1」以降に入社した従業員は従業員番号が「11」の従業員である
+					Arguments.of(
+						"2019-4-1",
+						"",
+						List.of(
+							new EmployeeBean(11, 5, "岡田 光太郎", "1501", "2019-06-11")
+						)
+					),
+					// 2008年度に入社した従業員は従業員番号が「5」と「8」の従業員である
+					Arguments.of(
+						"2008-4-1",
+						"2009-3-31",
+						List.of(
+							  new EmployeeBean(5, 3, "萩原 恵理子", "01251", "2008-9-28")
+							, new EmployeeBean(8, 4, "西口 麻衣子", "03000", "2008-12-3")
+						)
+					)
+				);
+		}
+		
+	}
+	
+	@Nested
 	@DisplayName("EmployeeDAO#findByNameLikeメソッドのテストクラス")
 	class FindByNameLikeTest {
 		@BeforeEach
