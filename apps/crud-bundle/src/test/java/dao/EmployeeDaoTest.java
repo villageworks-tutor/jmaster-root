@@ -58,7 +58,117 @@ class EmployeeDaoTest extends DbUnitTestHelper {
 	}
 	
 	@Nested
-	@DisplayName("EmployeeDDAO#finsByHiredAtBetweenメソッドのテスト")
+	@DisplayName("EmployeeDAO#findByNameLikeAndHiredAtBetweenメソッドのテストクラス")
+	class FindByNameLikeAndHiredAtBetweenTest {
+		@BeforeEach
+		void setUp() throws Exception {
+			restore();
+		}
+		
+		@ParameterizedTest
+		@MethodSource("findByNameAndHiredAtBetweenProvider")
+		void 従業員氏名のあいまい検索と入社日範囲検索の複合検索ができる(String name, String hiredAtFrom, String hiredAtTo, List<EmployeeBean> expected) throws Exception {
+			// setup & execute
+			List<EmployeeBean> actual = sut.findByNameLikeAndHiredAtBetween(name, hiredAtFrom, hiredAtTo);
+			// verify
+			assertEmployees(expected, actual);
+		}
+		
+		/**
+		 * 従業員氏名のあいまい検索と入社日範囲検索ができるテスト用のテストパラメータを提供する
+		 * @return テストパラメータ
+		 *         テストパラメータは以下の項目を返す
+		 *         	・検索キーワード
+		 *         	・入社日範囲検索開始日
+		 *         	・入社日範囲検索終了日
+		 *         	・検索結果の期待値（Liist<EmployeeBean>）
+		 */
+		static Stream<Arguments> findByNameAndHiredAtBetweenProvider() {
+			return
+				Stream.of(
+					// すべてのパラメータが指定されなかった場合
+					Arguments.of(
+						"", 
+						null, 
+						"",
+						sampleEmployees
+					),
+					
+					// 入社日範囲終了日が指定された場合
+					Arguments.of(
+						"", 
+						"", 
+						"1991-4-1",
+						List.of(
+							  new EmployeeBean(2, 1, "釜本 喜美子", "01600", "1991-2-20")
+							, new EmployeeBean(3, 2, "安部 弘江", "01250", "1991-2-22")
+					    )
+					),
+					
+					// 入社日範囲開始日が指定された場合
+					Arguments.of(
+						"", 
+						"2019-4-1", 
+						"",
+						List.of(
+							new EmployeeBean(11, 5, "岡田 光太郎", "1501", "2019-06-11")
+					    )
+					),
+					
+					// 入社日範囲の開始日と終了日が指定された場合
+					Arguments.of(
+						"",
+						"2008-4-1",
+						"2009-3-31",
+						List.of(
+							  new EmployeeBean(5, 3, "萩原 恵理子", "01251", "2008-9-28")
+							, new EmployeeBean(8, 4, "西口 麻衣子", "03000", "2008-12-3")
+						 )
+
+					),
+					// 氏名が指定された場合
+					Arguments.of(
+						"岡田",
+						null,
+						null,
+						List.of(
+							  new EmployeeBean(6, 3, "岡田 奈緒子", "02850", "2007-5-1")
+							, new EmployeeBean(11, 5, "岡田 光太郎", "1501", "2019-06-11")
+						)
+					),
+					// 氏名と入社日範囲終了日のパラメータが指定された場合
+					Arguments.of(
+						"本",
+						null,
+						"1991-4-1",
+						List.of(
+							new EmployeeBean(2, 1, "釜本 喜美子", "01600", "1991-2-20")
+						)
+					),
+					// 氏名と入社日範囲開始日のパラメータが指定された場合
+					Arguments.of(
+						"尚",
+						"2000-4-1",
+						"",
+						List.of(
+							new EmployeeBean(7, 3, "井上 尚志", "02450", "2000-11-15")
+						)
+					),
+					// すべてのパラメータが指定された場合
+					Arguments.of(
+						"滝本 順三", 
+						"2000-4-1",
+						"2019-3-31",
+						List.of(
+							new EmployeeBean(9, 4, "滝本 順三", "05000", "2004-12-18")
+						)
+					)
+				);
+		}
+	}
+	
+	@Nested
+	@DisplayName("EmployeeDAO#finsByHiredAtBetweenメソッドのテストクラス")
 	class FindByHiredAtBetweenTest {
 		@BeforeEach
 		void setUp() throws Exception {

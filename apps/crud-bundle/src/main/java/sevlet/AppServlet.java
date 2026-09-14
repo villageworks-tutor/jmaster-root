@@ -26,7 +26,6 @@ public class AppServlet extends HttpServlet {
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
-	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// 1. リクエストパラメータの文字コードを設定
 		request.setCharacterEncoding("utf-8");
@@ -51,14 +50,9 @@ public class AppServlet extends HttpServlet {
 				String name = request.getParameter("name");
 				String hiredAtFrom = request.getParameter("hiredAtFrom");
 				String hiredAtTo = request.getParameter("hiredAtTo");
-				List<EmployeeBean> list;
-				if (name != null && !name.isEmpty()) {
-					// 3-2.2.1 氏名あいまい検索を実行
-					list = dao.findByNameLike(name);
-				} else {
-					// 3-2.2.2 入社日範囲検索を実行
-					list = dao.findByHiredAtBetween(hiredAtFrom, hiredAtTo);
-				}
+				// 3-2.2 あいまい検索と範囲検索の複合検索を実行：前のリリースまでのあいまい検索と範囲検索の分岐を削除
+				List<EmployeeBean> list = 
+					dao.findByNameLikeAndHiredAtBetween(name, hiredAtFrom, hiredAtTo);
 				// 3-2.3 従業員リストと検索条件をスコープに登録
 				request.setAttribute("employees", list);
 				request.setAttribute("name", name);

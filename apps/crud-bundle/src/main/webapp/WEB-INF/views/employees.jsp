@@ -18,17 +18,14 @@
 				<h2>従業員表示</h2>
 				<section class="contents">
 					<section class="criteria">
+						<form action="<c:url value="/AppServlet" />" method="get">
 						<table border="0">
 							<tr>
 								<th>
 									<label for="name">氏名</label>
 								</th>
 								<td>
-								<form action="<c:url value="/AppServlet" />" method="get">
 									<input id="name" type="text" name="name" value="${name}" placeholder="氏名" />
-									<input type="hidden" name="action" value="search" />
-									<button>検索</button>
-								</form>
 								</td>
 							</tr>
 							<tr>
@@ -36,16 +33,19 @@
 									<label for="hiredAt">入社日</label>
 								</th>
 								<td>
-								<form id="hiredAt" action="<c:url value="/AppServlet" />" method="get">
 									<input type="text" name="hiredAtFrom" value="${hiredAtFrom}" placeholder="yyyy-MM-dd" />
 									～									
 									<input type="text" name="hiredAtTo" value="${hiredAtTo}" placeholder="yyyy-MM-dd" />
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2">
 									<input type="hidden" name="action" value="search" />
 									<button>検索</button>
-								</form>
 								</td>
 							</tr>
 						</table>
+						</form>
 					</section>
 					<section class="result">
 					<c:choose>

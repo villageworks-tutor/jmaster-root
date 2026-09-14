@@ -18,8 +18,10 @@ import bean.EmployeeBean;
  */
 public class EmployeeDAO extends BaseDAO {
 
-	private static final String SQL_FIND_ALL = "SELECT * FROM employees ORDER BY id";
-	private static final String SQL_FIND_BY_NAME_LIKE = "SELECT * FROM employees WHERE name LIKE ? ORDER BY id";
+	
+	private static final String SQL_SELECT   = "SELECT * FROM employees ";
+	private static final String SQL_FIND_ALL = SQL_SELECT + "ORDER BY id";
+	private static final String SQL_FIND_BY_NAME_LIKE = SQL_SELECT + "WHERE name LIKE ? ORDER BY id";
 	
 	/**
 	 * 引数なしコンストラクタ
@@ -30,23 +32,97 @@ public class EmployeeDAO extends BaseDAO {
 	}
 
 	/**
+	 * 従業員氏名あいまい検索と入社日範囲検索の複合検索
+	 * @param  name 従業員氏名に含まれるキーワード
+	 * @param  hiredAtFrom 入社日検索範囲開始日
+	 * @param  hiredAtTo   入社日検索範囲終了日
+	 * @return List<EmployeeBean> 従業員リスト
+	 * @throws DAOException レコードの取得に失敗した場合
+	 */
+	public List<EmployeeBean> findByNameLikeAndHiredAtBetween(String name, String hiredAtFrom, String hiredAtTo) throws DAOException {
+		// 0. 実行するSQLを生成
+		String sql = SQL_SELECT;
+		if (hasValue(name)) {
+			sql += "WHERE name LIKE ? ";
+			if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+				sql += "AND hired_at BETWEEN ? AND ? ";
+			} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
+				sql += "AND hired_at >= ? ";
+			} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+				sql += "AND hired_at <= ? ";
+			}
+		} else {
+			if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+				sql += "WHERE hired_at BETWEEN ? AND ? ";
+			} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
+				sql += "WHERE hired_at >= ? ";
+			} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+				sql += "WHERE hired_at <= ? ";
+			}
+		}
+		sql += "ORDER BY id";
+		
+		try (// 1. データベース接続オブジェクトを取得
+			 Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);	
+			 // 2. SQL実行オブジェクトを取得
+			 PreparedStatement pstmt = con.prepareStatement(sql);) {
+			// 3. パラメータバインディング
+			if (hasValue(name)) {
+				if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+					pstmt.setString(1, "%" + name + "%");
+					pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtFrom)));
+					pstmt.setDate(3, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtTo)));
+				} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
+					pstmt.setString(1, "%" + name + "%");
+					pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtFrom)));
+				} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+					pstmt.setString(1, "%" + name + "%");
+					pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtTo)));
+				} else {
+					pstmt.setString(1, "%" + name + "%");
+				}
+			} else {
+				if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+					pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtFrom)));
+					pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtTo)));
+				} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
+					pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtFrom)));
+				} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
+					pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(hiredAtTo)));
+				}
+			}
+			
+			try (// 4. SQLの実行と結果セットの取得
+				 ResultSet rs = pstmt.executeQuery();) {
+				// 5. 結果セットを従業員リストに変換
+				List<EmployeeBean> list = this.convertToList(rs);
+				// 6. 従業員リストを返却
+				return list;
+			}
+		} catch (SQLException e) {
+			// スタックトレースに表示
+			e.printStackTrace();
+			// DAO例外をスロー
+			throw new DAOException("レコードの取得に失敗しました。", e);
+		}
+	}
+
+	/**
 	 * 入社日範囲検索
-	 * @param hiredAtFrom 入社日検索範囲開始日
-	 * @param hiredAtTo   入社日検索範囲終了日
+	 * @param  hiredAtFrom 入社日検索範囲開始日
+	 * @param  hiredAtTo   入社日検索範囲終了日
 	 * @return List<EmployeeBean> 従業員リスト
 	 * @throws DAOException レコードの取得に失敗した場合
 	 */
 	public List<EmployeeBean> findByHiredAtBetween(String hiredAtFrom, String hiredAtTo) throws DAOException {
 		// 0. 実行するSQLの設定
-		String sql = "SELECT * FROM employees";
+		String sql = SQL_SELECT;
 		if (hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
-			sql += " WHERE hired_at BETWEEN ? AND ? ";
+			sql += "WHERE hired_at BETWEEN ? AND ? ";
 		} else if (hasValue(hiredAtFrom) && !hasValue(hiredAtTo)) {
-			sql += " WHERE hired_at >= ? ";
+			sql += "WHERE hired_at >= ? ";
 		} else if (!hasValue(hiredAtFrom) && hasValue(hiredAtTo)) {
-			sql += " WHERE hired_at <= ? ";
-		} else {
-			sql += " ";
+			sql += "WHERE hired_at <= ? ";
 		}
 		sql += "ORDER BY id;";
 		
@@ -78,7 +154,7 @@ public class EmployeeDAO extends BaseDAO {
 			throw new DAOException("レコードの取得に失敗しました。", e);
 		}
 	}
-
+	
 	/**
 	 * 従業員指名あいまい検索
 	 * @param  name 従業員氏名に含まれるキーワード
