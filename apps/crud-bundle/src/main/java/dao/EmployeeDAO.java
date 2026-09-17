@@ -12,6 +12,7 @@ import java.util.List;
 import org.villageworks.app.DateConverter;
 
 import bean.EmployeeBean;
+import common.Utils;
 import dao.criteria.EmployeeCriteria;
 
 /**
@@ -129,41 +130,28 @@ public class EmployeeDAO extends BaseDAO {
 	}
 
 	/**
-	 * 検索条件のフィールドのパターンをもとにパラメータバインディングを実行する
+	 * 検索条件に応じてパラメータバインディングを実行する
 	 * @param pstmt         対象となるSQL実行オブジェクト
 	 * @param criteria      検索条件オブジェクト
 	 * @throws SQLException パラメータバインディングに失敗した場合
 	 */
 	private void bind(PreparedStatement pstmt, EmployeeCriteria criteria) throws SQLException {
-		switch (criteria.getPlaceholderPattern()) {
-		case 0b111:
-			pstmt.setString(1, "%" + criteria.getName() + "%");
-			pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtFrom())));
-			pstmt.setDate(3, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtTo())));
-			break;
-		case 0b110:
-			pstmt.setString(1, "%" + criteria.getName() + "%");
-			pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtFrom())));
-			break;
-		case 0b101:
-			pstmt.setString(1, "%" + criteria.getName() + "%");
-			pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtTo())));
-			break;
-		case 0b100:
-			pstmt.setString(1, "%" + criteria.getName() + "%");
-			break;
-		case 0b011:
-			pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtFrom())));
-			pstmt.setDate(2, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtTo())));
-			break;
-		case 0b010:
-			pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtFrom())));
-			break;
-		case 0b001:
-			pstmt.setDate(1, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtTo())));
-			break;
-		default:
-			break;
+		// プレースホルダのインデックスの初期化
+		int index = 0;
+		// 氏名あいまい検索用キーワードが指定されている場合
+		if (Utils.hasValue(criteria.getName())) {
+			index++;
+			pstmt.setString(index, "%" + criteria.getName() + "%");
+		}
+		// 入社日範囲検索の開始日が指定されている場合
+		if (Utils.hasValue(criteria.getHiredAtFrom())) {
+			index++;
+			pstmt.setDate(index, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtFrom())));
+		}
+		// 入社日範囲検索の終了日が指定されている場合
+		if (Utils.hasValue(criteria.getHiredAtTo())) {
+			index++;
+			pstmt.setDate(index, DateConverter.toSqlDate(DateConverter.toLocalDate(criteria.getHiredAtTo())));
 		}
 		
 	}

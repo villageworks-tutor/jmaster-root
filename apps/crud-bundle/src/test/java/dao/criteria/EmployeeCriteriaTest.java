@@ -86,49 +86,6 @@ class EmployeeCriteriaTest {
 	}
 	
 	@Nested
-	@DisplayName("EmployeeCriteria#calcPlaceholderPattern()メソッドのテストクラス")
-	class CalcPlaceholderPatternTest {
-		@ParameterizedTest
-		@MethodSource("calcPlaceholderPatternProvider")
-		void プレースホルダ付きSQLを生成するためのplaceholdernのパターンを計算できる(EmployeeCriteria target, int expected) {
-			// setup & execute
-			sut = target;
-			int actual = sut.getPlaceholderPattern();
-			// verify
-			assertEquals(expected, actual);
-		}
-		
-		/**
-		 * プレースホルダ付きSQLを生成するためのplaceholdernのパターンを計算するテストのテスト用パラメータを提供する
-		 * @return テストパラメータ
-		 *         テストパラメータは以下の項目を返す
-		 *         	・検索条件オブジェクト
-		 *         	・検索結果の期待値
-		 */
-		static Stream<Arguments> calcPlaceholderPatternProvider() {
-			return
-				Stream.of(
-					  // 氏名、入社日範囲ともに指定された場合
-					  Arguments.of(new EmployeeCriteria("滝本 順三", "2000-4-1", "2019-3-31"), 0b111)
-					  // 氏名、入社日範囲開始日が指定された場合
-					, Arguments.of(new EmployeeCriteria("尚", "2000-04-01", ""), 0b110)
-					  // 氏名、入社日範囲最終日が指定された場合
-					, Arguments.of(new EmployeeCriteria("本", "", "1991-4-1"), 0b101)
-					  // 氏名だけが指定された場合
-					, Arguments.of(new EmployeeCriteria("岡田", null, ""), 0b100)
-					  // 入社日範囲検索開始日だけが指定された場合
-					, Arguments.of(new EmployeeCriteria("", "2008-4-1", "2009-3-31"), 0b011)
-					  // 入社日範囲検索終了日だけが指定された場合
-					, Arguments.of(new EmployeeCriteria("", "2019-4-1", ""), 0b010)
-					  // 入社日範囲検索の開始日と終了日が指定された場合
-					, Arguments.of(new EmployeeCriteria("", "", "1991-4-1"), 0b001)
-					  // 引数なしでインスタンス化した場合
-					, Arguments.of(new EmployeeCriteria(), 0b000)
-				);
-		}
-	}
-	
-	@Nested
 	@DisplayName("EmployeeCriteria#constructorのテストクラス")
 	class ConstructorTest {
 		@Test
