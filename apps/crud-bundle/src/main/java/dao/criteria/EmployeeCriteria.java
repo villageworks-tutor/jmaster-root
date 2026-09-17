@@ -13,7 +13,6 @@ public class EmployeeCriteria {
 	private String name;            // 氏名あいまい検索用キーワード
 	private String hiredAtFrom;     // 入社日範囲検索・範囲開始日
 	private String hiredAtTo;       // 入社日範囲検索・範囲終了日
-	private int placeholderPattern; // プレースホルダと検索条件のフィールドのパターン（0bxxx：3bitの2進数表現） 
 	
 	/**
 	 * 引数なしコンストラクタ
@@ -30,7 +29,6 @@ public class EmployeeCriteria {
 		this.name = name;
 		this.hiredAtFrom = hiredAtFrom;
 		this.hiredAtTo = hiredAtTo;
-		this.placeholderPattern = this.calcPlaceholderPatttern();
 	}
 
 	public String getName() {
@@ -44,11 +42,6 @@ public class EmployeeCriteria {
 	public String getHiredAtTo() {
 		return hiredAtTo;
 	}
-
-	public int getPlaceholderPattern() {
-		return placeholderPattern;
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
@@ -59,66 +52,30 @@ public class EmployeeCriteria {
 			   .append("]");
 		return builder.toString();
 	}
-	
-	/**
-	 * プレースホルダとフィールドのパターンを計算する
-	 * @return プレースホルダとフィールドのパターン：パターンのリテラル表現は3bitの2進数
-	 */
-	private int calcPlaceholderPatttern() {
-		if (Utils.hasValue(name) && Utils.hasValue(hiredAtFrom) && Utils.hasValue(hiredAtTo)) {
-			return 0b111;
-		} else if (Utils.hasValue(name) && Utils.hasValue(hiredAtFrom) && !Utils.hasValue(hiredAtTo)) {
-			return 0b110;
-		} else if (Utils.hasValue(name) && !Utils.hasValue(hiredAtFrom) && Utils.hasValue(hiredAtTo)) {
-			return 0b101;
-		} else if (Utils.hasValue(name) && !Utils.hasValue(hiredAtFrom) && !Utils.hasValue(hiredAtTo)) {
-			return 0b100;
-		} else if (!Utils.hasValue(name) && Utils.hasValue(hiredAtFrom) && Utils.hasValue(hiredAtTo)) {
-			return 0b011;
-		} else if (!Utils.hasValue(name) && Utils.hasValue(hiredAtFrom) && !Utils.hasValue(hiredAtTo)) {
-			return 0b010;
-		} else if (!Utils.hasValue(name) && !Utils.hasValue(hiredAtFrom) && Utils.hasValue(hiredAtTo)) {
-			return 0b001;
-		} else {
-			return 0b000;
-		}
-	}
 
 	/**
-	 * プレースホルダと検索条件のフィールドのパターンをもとにWHERE句を生成する
+	 * 検索条件によってWHERE句を生成する
 	 * @param  criteria 検索条件オブジェクト
 	 * @return WHERE句
 	 */
 	public String createWherePhrase() {
-		String condition;
-		switch (this.getPlaceholderPattern()) {
-		case 0b111:
-			condition = "WHERE name LIKE ? AND hired_at >= ? AND hired_at <= ?";
-			break;
-		case 0b110:
-			condition = "WHERE name LIKE ? AND hired_at >= ?";
-			break;
-		case 0b101:
-			condition = "WHERE name LIKE ? AND hired_at <= ?";
-			break;
-		case 0b100:
-			condition = "WHERE name LIKE ?";
-			break;
-		case 0b011:
-			condition = "WHERE hired_at >= ? AND hired_at <= ?";
-			break;
-		case 0b010:
-			condition = "WHERE hired_at >= ?";
-			break;
-		case 0b001:
-			condition = "WHERE hired_at <= ?";
-			break;
-		default:
-			condition = "";
-			break;
+		// WHERE句を初期化
+		String where = "WHERE 1 = 1 ";
+		// 氏名あいまい検索の検索キーワードが指定されている場合
+		if (Utils.hasValue(this.name)) {
+			where += "AND name LIKE ? ";
 		}
-		condition += " ";
-		return condition;
+		// 入社日範囲検索の開始日が指定されている場合
+		if (Utils.hasValue(this.hiredAtFrom)) {
+			where += "AND hired_at >= ? ";
+		}
+		// 入社日範囲検索の終了日が指定されている場合
+		if (Utils.hasValue(this.hiredAtTo)) {
+			where += "AND hired_at <= ? ";
+		}
+		// WHERE句を返却
+		return where;
+		
 	}
 
 }
